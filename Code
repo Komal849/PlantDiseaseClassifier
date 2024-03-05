@@ -1,0 +1,99 @@
+// Here Dotted lines shows Separating the execution with distinct cells.
+
+from google.colab import drive
+drive.mount('/content/drive')
+------------------------------------------------------------------------------------------------
+%cd /content/drive/MyDrive/
+------------------------------------------------------------------------------------------------
+import zipfile
+import os
+# Replace 'your_dataset.zip' with the actual zip file name
+zip_file_path = 'dataset.zip'
+# Replace 'your_extraction_path' with the path where you want to extract the contents
+extraction_path = '/content/dataset'
+with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+    zip_ref.extractall(extraction_path)
+------------------------------------------------------------------------------------------------
+os.listdir(extraction_path)
+------------------------------------------------------------------------------------------------
+import os
+def total_files(folder_path):
+    num_files = len([f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))])
+    return num_files
+train_files_healthy = "/content/dataset/Train/Train/Healthy"
+train_files_powdery = "/content/dataset/Train/Train/Powdery"
+train_files_rust = "/content/dataset/Train/Train/Rust"
+test_files_healthy = "/content/dataset/Test/Test/Healthy"
+test_files_powdery = "/content/dataset/Test/Test/Powdery"
+test_files_rust = "/content/dataset/Test/Test/Rust"
+valid_files_healthy = "/content/dataset/Validation/Validation/Healthy"
+valid_files_powdery = "/content/dataset/Validation/Validation/Powdery"
+valid_files_rust = "/content/dataset/Validation/Validation/Rust"
+
+print("Number of healthy leaf images in training set", total_files(train_files_healthy))
+print("Number of powder leaf images in training set", total_files(train_files_powdery))
+print("Number of rusty leaf images in training set", total_files(train_files_rust))
+print("========================================================")
+print("Number of healthy leaf images in test set", total_files(test_files_healthy))
+print("Number of powder leaf images in test set", total_files(test_files_powdery))
+print("Number of rusty leaf images in test set", total_files(test_files_rust))
+print("========================================================")
+print("Number of healthy leaf images in validation set", total_files(valid_files_healthy))
+print("Number of powder leaf images in validation set", total_files(valid_files_powdery))
+print("Number of rusty leaf images in validation set", total_files(valid_files_rust))
+---------------------------------------------------------------------------------------------------------
+from PIL import Image
+import IPython.display as display
+
+image_path = '/content/dataset/Train/Train/Healthy/8ce77048e12f3dd4.jpg'
+
+with open(image_path, 'rb') as f:
+    display.display(display.Image(data=f.read(), width=500))
+--------------------------------------------------------------------------------------------------------
+image_path = '/content/dataset/Train/Train/Rust/80f09587dfc7988e.jpg'
+
+with open(image_path, 'rb') as f:
+    display.display(display.Image(data=f.read(), width=500))
+-------------------------------------------------------------------------------------------------------
+image_path = '/content/dataset/Train/Train/Powdery/802f7439ec1ef0cd.jpg'
+
+with open(image_path, 'rb') as f:
+    display.display(display.Image(data=f.read(), width=500))
+---------------------------------------------------------------------------------------------------------
+from keras.preprocessing.image import ImageDataGenerator
+
+train_datagen = ImageDataGenerator(rescale=1./255, shear_range=0.2, zoom_range=0.2, horizontal_flip=True)
+test_datagen = ImageDataGenerator(rescale=1./255)
+---------------------------------------------------------------------------------------------------------
+train_generator = train_datagen.flow_from_directory('/content/dataset/Train/Train',
+                                                    target_size=(225, 225),
+                                                    batch_size=32,
+                                                    class_mode='categorical')
+
+validation_generator = test_datagen.flow_from_directory('/content/dataset/Validation/Validation',
+                                                        target_size=(225, 225),
+                                                        batch_size=32,
+                                                        class_mode='categorical')
+-----------------------------------------------------------------------------------------------------------
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+
+model = Sequential()
+model.add(Conv2D(32, (3, 3), input_shape=(225, 225, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Flatten())
+model.add(Dense(64, activation='relu'))
+model.add(Dense(3, activation='softmax'))
+--------------------------------------------------------------------------------------------------------------
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+--------------------------------------------------------------------------------------------------------------
+history = model.fit(train_generator,
+                    batch_size=16,
+                    epochs=5,
+                    validation_data=validation_generator,
+                    validation_batch_size=16
+                    )
+---------------------------------------------------------------------------------------------------------------
+                                               
